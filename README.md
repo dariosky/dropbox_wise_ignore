@@ -28,11 +28,11 @@ Dropbox doesn't give (yet) support for `.dropboxignore` but using the
 
 # Defaults
 
-By defaults if you run `dropbox_wise_ignore` from your Dropbox folder
+By default, if you run `dropbox_wise_ignore` from your Dropbox folder
 it will look for all your subfolders and ignore
 
 * all the `node_modules`, `.tox` and Python/Pytest cache folders
 * all the `("build", "dist", ".next")` folders in a folder that contains `node_modules`
 * all the `target` folders in a folder that contains `Cargo.toml` (for Rust)
-* consider all the `.dropboxignore` files in your Dropbox folders so you can change 
-  the above deafaults 🎉
+* consider all the `.dropboxignore` files in your Dropbox folders, so you can change 
+  the above defaults 🎉
