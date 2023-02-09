@@ -16,7 +16,7 @@ def exclude_folder(root, dir_name):
     full_path = os.path.join(root, dir_name)
     attrs = xattr(full_path)
     if "com.dropbox.ignored" not in attrs:
-        print(full_path)
+        print("Ignoring", full_path)
         try:
             xattr(full_path).set("com.dropbox.ignored", b"1")
         except OSError as e:
@@ -91,32 +91,35 @@ def is_path_ignored(
 
 
 def get_relative_path(root, path):
-    return "/" + os.path.relpath(path, start=root)
+    rel_path = os.path.relpath(path, start=root)
+    if rel_path.startswith("."):
+        rel_path = rel_path[1:]
+    return f"/{rel_path}"
 
 
 def main(empty_cache=False):
     folders_to_ignore = None
-    for root, dirs, files in os.walk(top_folder, topdown=True):
-        folders_to_ignore = read_ignored_folders(root, folders_to_ignore)
-        relative_root_path = get_relative_path(root, top_folder)
+    for current_folder, dirs, files in os.walk(top_folder, topdown=True):
+        folders_to_ignore = read_ignored_folders(current_folder, folders_to_ignore)
+        relative_root_path = get_relative_path(top_folder, current_folder)
 
         recursive_folders = []
         for dir_name in dirs:
-            full_path = os.path.join(root, dir_name)
+            full_path = os.path.join(current_folder, dir_name)
             if dir_name in NUKED_FOLDERS:
                 print(f"Nuking the folder {full_path}")
                 shutil.rmtree(full_path)
                 continue
             # exclude from dropbox all the excluded_folders - and all "build" folders sibilings of "node_modules"
             if is_path_ignored(
-                relative_root_path,
+                os.path.join(relative_root_path, dir_name),
                 folders_to_ignore,
                 sibiling_folders=dirs,
                 sibiling_files=files,
             ):
-                exclude_folder(root, dir_name)
+                exclude_folder(current_folder, dir_name)
                 if dir_name in CACHE_FOLDERS and empty_cache:
-                    full_path = os.path.join(root, dir_name)
+                    full_path = os.path.join(current_folder, dir_name)
                     empty_folder(full_path)
             else:
                 recursive_folders.append(dir_name)
