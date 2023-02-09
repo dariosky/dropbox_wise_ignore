@@ -24,6 +24,17 @@ def exclude_folder(root, dir_name):
             shutil.rmtree(full_path)
 
 
+def include_folder(root, dir_name):
+    full_path = os.path.join(root, dir_name)
+    attrs = xattr(full_path)
+    if "com.dropbox.ignored" in attrs:
+        print("Including ignored folder", full_path)
+        try:
+            xattr(full_path).remove("com.dropbox.ignored")
+        except OSError as e:
+            print(f"Error including ignored folder - {e}")
+
+
 def empty_folder(folder_path):
     content = os.listdir(folder_path)
     if content:
@@ -70,9 +81,12 @@ def read_ignored_folders(
 def is_path_ignored(
     relative_path, folders_to_ignore, sibiling_folders=None, sibiling_files=None
 ):
-    if f"!{relative_path}" in folders_to_ignore:
-        return False  # we have an exception for this specific path
     dir_name = os.path.basename(relative_path)
+    if (
+        f"!{relative_path}" in folders_to_ignore
+        or f"!/{relative_path}" in folders_to_ignore
+    ):
+        return False  # we have an exception for this specific path
     if dir_name in folders_to_ignore:
         return True  # we ignore all these folders
     if relative_path in folders_to_ignore:
@@ -112,7 +126,7 @@ def main(empty_cache=False):
                 continue
             # exclude from dropbox all the excluded_folders - and all "build" folders sibilings of "node_modules"
             if is_path_ignored(
-                os.path.join(relative_root_path, dir_name),
+                dir_name,
                 folders_to_ignore,
                 sibiling_folders=dirs,
                 sibiling_files=files,
@@ -122,6 +136,8 @@ def main(empty_cache=False):
                     full_path = os.path.join(current_folder, dir_name)
                     empty_folder(full_path)
             else:
+                if dir_name in EXCLUDED_FOLDERS:
+                    include_folder(current_folder, dir_name)
                 recursive_folders.append(dir_name)
 
         dirs[:] = recursive_folders
